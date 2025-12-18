@@ -1127,16 +1127,17 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            border-radius: 16px;
+            border-radius: 0;
             cursor: pointer;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: var(--shadow-sm);
+            box-shadow: none;
+            aspect-ratio: auto;
+            display: block;
         }
 
         .article-images img:hover {
-            transform: scale(1.05);
+            transform: scale(1.02);
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-            border-radius: 20px;
         }
 
         .article-video video {
@@ -1419,16 +1420,17 @@
 
         .share-menu {
             display: none;
-            position: fixed;
-            top: 50%;
+            position: absolute;
+            bottom: 100%;
             left: 50%;
-            transform: translate(-50%, -50%);
+            transform: translateX(-50%);
             background: var(--bg-secondary);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 24px;
-            min-width: 360px;
-            z-index: 10000;
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            padding: 20px;
+            margin-bottom: 12px;
+            min-width: 320px;
+            z-index: 100;
             animation: shareMenuSlide 0.3s ease;
             border: 2px solid var(--border-color);
         }
@@ -1436,11 +1438,11 @@
         @keyframes shareMenuSlide {
             from {
                 opacity: 0;
-                transform: translate(-50%, -50%) scale(0.9);
+                transform: translateX(-50%) translateY(10px);
             }
             to {
                 opacity: 1;
-                transform: translate(-50%, -50%) scale(1);
+                transform: translateX(-50%) translateY(0);
             }
         }
 
@@ -1448,59 +1450,12 @@
             display: block;
         }
 
-        .share-menu-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            z-index: 9999;
-        }
-
-        .share-menu-overlay.show {
-            display: block;
-        }
-
         .share-menu h4 {
             color: var(--text-primary);
-            font-size: 18px;
-            margin-bottom: 20px;
+            font-size: 16px;
+            margin-bottom: 16px;
             text-align: center;
             font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .share-menu h4 i {
-            color: var(--accent-blue);
-        }
-
-        .share-menu-close {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            background: rgba(0, 0, 0, 0.05);
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            color: var(--text-secondary);
-            transition: all 0.3s ease;
-        }
-
-        .share-menu-close:hover {
-            background: rgba(0, 0, 0, 0.1);
-            transform: rotate(90deg);
         }
 
         .share-options {
@@ -2370,15 +2325,15 @@
         let optimisticReactions, optimisticComments;
 
         async function initOptimisticManagers() {
-            if (window.OptimisticSync && currentUser && supabase) {
+            if (window.OptimisticSync && currentUser && window.supabase) {
                 // Récupérer le token de session actuel
-                const { data: { session } } = await supabase.auth.getSession();
+                const { data: { session } } = await window.supabase.auth.getSession();
                 
                 if (session) {
                     // Initialiser OptimisticSync avec les credentials corrects
                     await window.OptimisticSync.init(
-                        supabase.supabaseUrl,
-                        supabase.supabaseKey,
+                        window.supabase.supabaseUrl,
+                        window.supabase.supabaseKey,
                         {
                             ...currentUser,
                             token: session.access_token,
@@ -2399,7 +2354,7 @@
         // ============================================================================
         // APPLICATION PRINCIPALE
         // ============================================================================
-        const { supabase, getCurrentUser, getUserProfile } = window.supabaseClient;
+        // Variables globales - Déclaration unique
         let currentUser = null;
         let userProfile = null;
         let allArticles = [];
@@ -2552,21 +2507,7 @@
             const welcomePopup = document.getElementById('welcome-popup');
             const welcomeOverlay = document.getElementById('welcome-overlay');
 
-            // 🔥 NOUVELLE LOGIQUE : Gestion des noms vides
-            let prenom = userProfile.prenom || 'Utilisateur';
-            let nom = userProfile.nom || '';
-            
-            // Si nom est vide, utiliser prénom deux fois
-            if (!nom || nom.trim() === '') {
-                nom = prenom;
-            }
-            
-            // Si prénom est vide, utiliser nom deux fois
-            if (!prenom || prenom.trim() === '') {
-                prenom = nom || 'Utilisateur';
-            }
-            
-            const fullName = `${prenom} ${nom}`.trim();
+            const fullName = `${userProfile.prenom} ${userProfile.nom}`.trim();
             welcomeName.textContent = fullName;
 
             setTimeout(() => {
@@ -2585,22 +2526,7 @@
                 document.getElementById('login-item').style.display = 'none';
                 document.getElementById('profile-item').style.display = 'flex';
                 document.getElementById('logout-item').style.display = 'flex';
-                
-                // 🔥 NOUVELLE LOGIQUE : Gestion des noms vides
-                let prenom = userProfile.prenom || 'Utilisateur';
-                let nom = userProfile.nom || '';
-                
-                // Si nom est vide, utiliser prénom deux fois
-                if (!nom || nom.trim() === '') {
-                    nom = prenom;
-                }
-                
-                // Si prénom est vide, utiliser nom deux fois
-                if (!prenom || prenom.trim() === '') {
-                    prenom = nom || 'Utilisateur';
-                }
-                
-                document.getElementById('user-name').textContent = `${prenom} ${nom}`;
+                document.getElementById('user-name').textContent = `${userProfile.prenom} ${userProfile.nom}`;
                 
                 // Afficher le menu Administration seulement si l'utilisateur est admin
                 if (userProfile.role === 'admin') {
@@ -2761,7 +2687,6 @@
             document.addEventListener('click', function(e) {
                 if (!e.target.closest('.share-menu') && !e.target.closest('.share-btn')) {
                     document.querySelectorAll('.share-menu.show').forEach(m => m.classList.remove('show'));
-                    document.querySelectorAll('.share-menu-overlay').forEach(o => o.remove());
                 }
                 if (!e.target.closest('.admin-options')) {
                     document.querySelectorAll('.options-menu.show').forEach(menu => menu.classList.remove('show'));
@@ -2773,7 +2698,7 @@
                 try {
                     LoadingManager.show();
                     sessionStorage.removeItem('welcomeShown');
-                    await supabase.auth.signOut();
+                    await window.supabase.auth.signOut();
                     sessionStorage.setItem('manualLogout', 'true');
                     ToastManager.success('Déconnexion', 'À bientôt !');
                     setTimeout(() => {
@@ -2836,7 +2761,7 @@
         async function loadUserReactions() {
             if (!currentUser) return;
             try {
-                const { data } = await supabase
+                const { data } = await window.supabase
                     .from('article_reactions')
                     .select('article_id, reaction_type')
                     .eq('user_id', currentUser.id);
@@ -2861,7 +2786,7 @@
         function setupRealTimeUpdates() {
             if (!currentUser) return;
 
-            supabase.channel('articles-changes')
+            window.supabase.channel('articles-changes')
                 .on('postgres_changes', { 
                     event: '*', schema: 'public', table: 'articles' 
                 }, async (payload) => {
@@ -2870,7 +2795,7 @@
                 })
                 .subscribe();
 
-            supabase.channel('reactions-changes')
+            window.supabase.channel('reactions-changes')
                 .on('postgres_changes', { 
                     event: '*', schema: 'public', table: 'article_reactions' 
                 }, async () => {
@@ -2879,7 +2804,7 @@
                 })
                 .subscribe();
 
-            supabase.channel('comments-changes')
+            window.supabase.channel('comments-changes')
                 .on('postgres_changes', { 
                     event: '*', schema: 'public', table: 'sessions_commentaires' 
                 }, async () => {
@@ -2887,7 +2812,7 @@
                 })
                 .subscribe();
 
-            supabase.channel('notifications-changes')
+            window.supabase.channel('notifications-changes')
                 .on('postgres_changes', { 
                     event: 'INSERT', 
                     schema: 'public', 
@@ -2898,7 +2823,7 @@
                 })
                 .subscribe();
 
-            supabase.channel('messages-changes')
+            window.supabase.channel('messages-changes')
                 .on('postgres_changes', { 
                     event: 'INSERT', 
                     schema: 'public', 
@@ -2927,14 +2852,14 @@
                     throw new Error('Pas de connexion Internet');
                 }
                 
-                if (!supabase) {
+                if (!window.supabase) {
                     console.error('❌ Supabase client non initialisé');
                     throw new Error('Client Supabase non disponible');
                 }
                 
                 console.log('📡 Requête Supabase en cours...');
                 
-                const { data: articles, error, status, statusText } = await supabase
+                const { data: articles, error, status, statusText } = await window.supabase
                     .from('articles')
                     .select(`
                         *,
@@ -3205,10 +3130,7 @@
                         <div class="share-btn" onclick="toggleShareMenu(event, '${article.article_id}')">
                             <i class="fas fa-share-alt"></i>
                             <div class="share-menu" id="share-menu-${article.article_id}">
-                                <button class="share-menu-close" onclick="event.stopPropagation(); this.closest('.share-menu').classList.remove('show'); document.querySelector('.share-menu-overlay')?.remove();">
-                                    ×
-                                </button>
-                                <h4><i class="fas fa-share-nodes"></i> Partager l'article</h4>
+                                <h4>Partager</h4>
                                 <div class="share-options">
                                     <a class="share-option facebook" onclick="shareToFacebook('${article.article_id}')">
                                         <i class="fab fa-facebook"></i>
@@ -3278,7 +3200,7 @@
                 const reactionBtn = document.querySelector(`[data-article-id="${articleId}"] .reaction-btn[onclick*="${reactionType}"]`);
                 const wasActive = reactionBtn.classList.contains('active');
                 
-                const { data: existing, error: selectError } = await supabase
+                const { data: existing, error: selectError } = await window.supabase
                     .from('article_reactions')
                     .select('*')
                     .eq('article_id', articleId)
@@ -3306,13 +3228,13 @@
                     console.warn('⚠️ OptimisticSync non disponible, utilisation méthode classique');
                     // Fallback classique
                     if (existing) {
-                        await supabase.from('article_reactions').delete().eq('reaction_id', existing.reaction_id);
+                        await window.supabase.from('article_reactions').delete().eq('reaction_id', existing.reaction_id);
                         if (userReactions[articleId]) {
                             userReactions[articleId] = userReactions[articleId].filter(r => r !== reactionType);
                         }
                         ToastManager.info('Réaction retirée', '');
                     } else {
-                        await supabase.from('article_reactions').insert({ 
+                        await window.supabase.from('article_reactions').insert({ 
                             article_id: articleId, 
                             user_id: currentUser.id, 
                             reaction_type: reactionType 
@@ -3349,7 +3271,7 @@
             container.innerHTML = '<div class="loader"><div class="spinner"></div></div>';
             try {
                 // Récupérer les commentaires via la vue SQL
-                const { data: comments, error: commentError } = await supabase
+                const { data: comments, error: commentError } = await window.supabase
                     .from('comments_with_actor_info')
                     .select('*')
                     .eq('article_id', articleId)
@@ -3358,7 +3280,7 @@
                 if (commentError) throw commentError;
                 
                 // Récupérer TOUTES les réponses (pas de filtre article_id)
-                const { data: allReplies, error: replyError } = await supabase
+                const { data: allReplies, error: replyError } = await window.supabase
                     .from('replies_with_actor_info')
                     .select('*')
                     .order('date_created', { ascending: true });
@@ -3503,7 +3425,7 @@
             if (!texte) return;
 
             try {
-                const { error } = await supabase
+                const { error } = await window.supabase
                     .from('sessions_commentaires')
                     .insert([{
                         article_id: articleId,
@@ -3535,7 +3457,7 @@
             if (!texte) return;
 
             try {
-                const { error } = await supabase
+                const { error } = await window.supabase
                     .from('session_reponses')
                     .insert([{
                         session_id: parentId,
@@ -3563,7 +3485,7 @@
             if (!confirm("Voulez-vous vraiment supprimer ce commentaire ?")) return;
 
             try {
-                const { error } = await supabase
+                const { error } = await window.supabase
                     .from('sessions_commentaires')
                     .delete()
                     .eq('session_id', commentId)
@@ -3608,30 +3530,12 @@
         function toggleShareMenu(event, articleId) {
             event.stopPropagation();
             const menu = document.getElementById(`share-menu-${articleId}`);
-            
-            // Fermer tous les autres menus
             document.querySelectorAll('.share-menu.show').forEach(m => {
                 if (m.id !== `share-menu-${articleId}`) {
                     m.classList.remove('show');
                 }
             });
-            document.querySelectorAll('.share-menu-overlay').forEach(o => o.remove());
-            
-            // Toggle le menu actuel
-            if (menu.classList.contains('show')) {
-                menu.classList.remove('show');
-            } else {
-                // Créer l'overlay
-                const overlay = document.createElement('div');
-                overlay.className = 'share-menu-overlay show';
-                overlay.onclick = () => {
-                    menu.classList.remove('show');
-                    overlay.remove();
-                };
-                document.body.appendChild(overlay);
-                
-                menu.classList.add('show');
-            }
+            menu.classList.toggle('show');
         }
 
         function getArticleShareUrl(articleId) {
@@ -3728,7 +3632,7 @@
             try {
                 LoadingManager.show();
                 
-                const { error } = await supabase.from('articles').delete().eq('article_id', articleId);
+                const { error } = await window.supabase.from('articles').delete().eq('article_id', articleId);
                 
                 if (error) throw error;
                 
@@ -3760,7 +3664,7 @@
         async function loadNotificationCount() {
             if (!currentUser) return;
             try {
-                const { count } = await supabase
+                const { count } = await window.supabase
                     .from('notifications')
                     .select('*', { count: 'exact', head: true })
                     .eq('user_id', currentUser.id)
@@ -3781,7 +3685,7 @@
         async function loadMessageCount() {
             if (!currentUser) return;
             try {
-                const { count } = await supabase
+                const { count } = await window.supabase
                     .from('messages')
                     .select('*', { count: 'exact', head: true })
                     .eq('receiver_id', currentUser.id)
@@ -3858,4 +3762,4 @@
         window.toggleReplyBox = toggleReplyBox;
     </script>
 </body>
-        </html>
+    </html>
